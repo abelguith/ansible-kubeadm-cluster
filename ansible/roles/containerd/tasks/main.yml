@@ -1,0 +1,86 @@
+---
+- name: Check and Remove docker if previous versions exist 
+  block:
+    - name: Remove the docker and containerd package
+      ansible.builtin.apt:
+        name:
+          - docker.io
+        state: absent
+
+- name: Add the apt repository of containerd and Install containerd runtime
+  block:
+    - name: Check if keyring is already present
+      ansible.builtin.stat:
+        path: /usr/share/keyrings/docker.gpg
+      register: containerd_keyring_present
+
+    - name: Adding the Containerd repo key
+      ansible.builtin.apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        keyring: /usr/share/keyrings/docker.gpg 
+      when: containerd_keyring_present.stat.exists != 'true'
+
+    - name: Retrieve dpkg architecture 
+      ansible.builtin.shell: "echo $(dpkg --print-architecture)"
+      register: dpkg_architecture
+      changed_when: false
+      ignore_errors: true
+
+    - name: The containerd repo
+      ansible.builtin.shell: "echo 'deb [arch={{ dpkg_architecture.stdout }} signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable' | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null"
+      changed_when: false
+      ignore_errors: true
+
+    - name: Installing containerd runtime
+      ansible.builtin.apt:
+        name: containerd
+        state: present
+
+    - name: Make the directory
+      ansible.builtin.file:
+        path: /etc/containerd
+        state: directory
+
+    - name: Generate CNI configurations
+      ansible.builtin.shell: "containerd config default > /etc/containerd/config.toml"
+
+    - name: Change the systemd driver of containerd
+      ansible.builtin.replace:
+        path: /etc/containerd/config.toml
+        regexp: 'SystemdCgroup = false'
+        replace: 'SystemdCgroup = true'
+
+- name: Changing the user permissions to access container socket
+  block:
+    - name: Setting up a group
+      ansible.builtin.group:
+        name: containerd
+        state: present
+
+    - name: Retrieve the group id
+      ansible.builtin.shell: "cat /etc/group | grep containerd | awk -F ':' '{print $3}'"
+      register: containerd_group_id
+
+    - name: Adding the user to the group
+      ansible.builtin.user: 
+        name: devuser
+        groups: containerd
+        append: yes
+
+    - name: Add the group id in the config file 
+      ansible.builtin.replace:
+        path: /etc/containerd/config.toml
+        after: '[grpc]\n*address = "/run/containerd/containerd.sock"'
+        regexp: gid = 0
+        replace: 'gid = {{ containerd_group_id.stdout }}'
+
+    - name: Changing permission of the socket to the group
+      ansible.builtin.file: 
+        path: "/run/containerd/containerd.sock"
+        group: containerd
+
+- name: Reloading the containerd service
+  ansible.builtin.service:
+    name: containerd
+    state: restarted
+    enabled: true

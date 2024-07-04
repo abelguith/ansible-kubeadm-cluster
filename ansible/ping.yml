@@ -1,0 +1,12 @@
+---
+- name: Test connectivity and gather information
+  hosts: all
+  gather_facts: yes
+  
+  tasks:
+    - name: Ping the hosts
+      ping:
+      
+    - name: Display host information
+      debug:
+        msg: "Hostname: {{ ansible_hostname }}, IP Address: {{ ansible_host }}, Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}"

@@ -1,0 +1,13 @@
+---
+- name: Set hostname to 'worker'
+  shell: hostnamectl set-hostname worker
+  become: yes
+
+- name: Delete /etc/kubernetes/pki/ca.crt
+  shell: rm -rf /etc/kubernetes/pki/ca.crt
+  become: yes
+
+- name: Join worker to cluster
+  shell: "{{ hostvars['master'].join_command }}"
+  args:
+    chdir: /home/vagrant

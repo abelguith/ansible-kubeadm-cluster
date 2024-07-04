@@ -1,0 +1,32 @@
+---
+- name: Playbook to configure Kubernetes
+  hosts: all
+  become: true
+  vars:
+    kube_version: v1.28
+  roles:
+    - common
+    - containerd
+    - kubernetes
+
+- hosts: master
+  become: yes
+  roles:
+    - master_init
+
+- hosts: master
+  become: no
+  roles:
+    - calico
+
+- name: Configure Join Commands on Master Node
+  hosts: master
+  become: yes
+  roles:
+    - join_command
+
+- name: Join Worker Nodes
+  hosts: workers
+  become: yes
+  roles:
+    - worker

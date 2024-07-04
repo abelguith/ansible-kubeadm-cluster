@@ -1,0 +1,52 @@
+---
+- name: Install dependent packages
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - conntrack
+    state: present
+
+- name: Make the Keyring directory
+  ansible.builtin.file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: 755
+
+- name: Add the Apt repository /usr/share/keyrings/kubernetes-archive-keyring.gpg
+  block:
+    - name: Check if the keyring file is already present
+      ansible.builtin.stat:
+        path: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+      register: gpg_key_present
+
+    - name: Add apt key
+      ansible.builtin.apt_key:
+        url: https://pkgs.k8s.io/core:/stable:/{{ kube_version }}/deb/Release.key
+        keyring: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+      when: gpg_key_present.stat.exists != 'true'
+
+- name: Add the Kubernetes Repository
+  ansible.builtin.apt_repository:
+    repo: deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ kube_version }}/deb/ /
+    state: present
+    filename: kubernetes
+
+- name: Perform an apt update
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Install the main kubeadm, kubelet, kubectl
+  ansible.builtin.apt:
+    name: 
+      - 'kubelet'
+      - 'kubeadm'
+      - 'kubectl'
+    state: present
+  ignore_errors: true
+
+- name: Making sure containerd service is started
+  ansible.builtin.service:
+    name: containerd
+    state: started
