@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deploy
+  namespace: ahmed # Ensure it is not in the default namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-probes
+  template:
+    metadata:
+      labels:
+        app: test-probes
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.19.0 # Ensure a specific version tag is used, not latest
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "1Gi"

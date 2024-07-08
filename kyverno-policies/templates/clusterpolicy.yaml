@@ -1,0 +1,34 @@
+# kyverno-policy-chart/kyverno-policy/templates/clusterpolicy.yaml
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: {{ .Values.policyName }}
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: validate-namespace
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    validate:
+      message: "Using 'default' namespace is not allowed."
+      pattern:
+        metadata:
+          namespace: "!default"
+  - name: validate-podcontroller-namespace
+    match:
+      any:
+      - resources:
+          kinds:
+          - DaemonSet
+          - Deployment
+          - Job
+          - StatefulSet
+    validate:
+      message: "Using 'default' namespace is not allowed for pod controllers."
+      pattern:
+        metadata:
+          namespace: "!default"
