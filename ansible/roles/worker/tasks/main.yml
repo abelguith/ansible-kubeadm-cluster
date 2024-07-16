@@ -10,4 +10,4 @@
 - name: Join worker to cluster
   shell: "{{ hostvars['master'].join_command }}"
   args:
-    chdir: /home/vagrant
+    chdir: "/home/{{ ansible_user }}"
