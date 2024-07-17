@@ -1,6 +1,6 @@
 [master]
 
-master ansible_host=192.168.56.113  ansible_user=vagrant ansible_ssh_private_key_file=/home/ahmed/master.key
+master ansible_host=[your-master-ip]  ansible_user=[[your-master-username] ansible_ssh_private_key_file=destination/to/master/privatekey
 [workers]
 
-worker ansible_host=192.168.56.114 ansible_user=vagrant ansible_ssh_private_key_file=/home/ahmed/worker.key
+worker ansible_host=[your-worker-ip] ansible_user=[your-worker-username] ansible_ssh_private_key_file=destination/to/master/privatekey
