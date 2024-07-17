@@ -4,7 +4,7 @@
 
 - name: Create .kube directory
   become: yes
-  become_user: vagrant
+  become_user: "{{ ansible_user }}"
   file:
     path: $HOME/.kube
     state: directory
@@ -13,6 +13,6 @@
 - name: Copy admin.conf to User's kube config
   copy:
     src: /etc/kubernetes/admin.conf
-    dest: /home/vagrant/.kube/config
+    dest: "/home/{{ ansible_user }}/.kube/config"
     remote_src: yes
-    owner: vagrant
+    owner: "{{ ansible_user }}"
