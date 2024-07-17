@@ -3,7 +3,7 @@
   hosts: all
   become: true
   vars:
-    kube_version: v1.28
+    kube_version: v1.30
   roles:
     - common
     - containerd
